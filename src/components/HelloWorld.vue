@@ -33,7 +33,6 @@ import type {
 import type { 
   ComposeOption, 
 } from 'echarts/core';
-import test from "node:test";
 
 type ECOption = ComposeOption<
   | BarSeriesOption
@@ -59,8 +58,17 @@ type ECOption = ComposeOption<
   ]);
 
 //用来设置
+//接收数据时是否解压缩
 var isCompress = [false,false,false,false];
-var DelayChartUse = [true,true,true,true,true,true,true,true]
+//接收数据时是否重绘表格
+// var DelayChartUse = [true,true,true,true,true,true,true,true]
+var DelayChartUse = [false,false,false,false,false,false,false,false,false,]
+//是否启用本地数据测试压缩
+// import {originStr100} from "../assets/originStr"
+const isLocalCompress = false;
+const encoder = new TextEncoder()
+// const bytes = encoder.encode(originStr100)
+const bytes = encoder.encode("1212")
 
 
 //创建ref与表格
@@ -215,15 +223,19 @@ onMounted(() => {
   //以下是没有压缩的数据
   socket.on('data_10000', (data) => {
     reDrawChart(0,0,0,data.time)
+    hpcc_handle(bytes)
   })
   socket.on('data_20000', (data) => {
     reDrawChart(1,1,0,data.time)
+    hpcc_handle(bytes)
   })
   socket.on('data_50000', (data) => {
     reDrawChart(2,2,0,data.time)
+    hpcc_handle(bytes)
   })
   socket.on('data_100000', (data) => {
     reDrawChart(3,3,0,data.time)
+    hpcc_handle(bytes)
   })
   //以下是压缩了的数据
   socket.on('data_10000_comp', (data) => {
@@ -254,16 +266,30 @@ onMounted(() => {
       hpcc_handleCompress(unit8Array)
     }
   })
-      //hpcc-js/wasm/zstd
+      //进行解压
+  async function hpcc_handle(unit8Array:Uint8Array) {
+    if(isLocalCompress){
+      var tempBytes = await hpcc_Compress(unit8Array)
+      hpcc_handleCompress(tempBytes)
+    }
+  }
+  async function hpcc_Compress(unit8Array:Uint8Array) {
+      const zstd = await Zstd.load();
+      const compressed_data = zstd.compress(unit8Array)
+      const decompressed_string = decoder.decode(compressed_data)
+      console.log("压缩完成")
+      console.log(decompressed_string)
+      return compressed_data
+  }
   async function hpcc_handleCompress(unit8Array:Uint8Array) {
       const zstd = await Zstd.load();
-      const originstr = btoa(String.fromCharCode.apply(null, unit8Array))
       const decompressed_data = zstd.decompress(unit8Array)
       const decompressed_string = decoder.decode(decompressed_data)
       console.log("解压完成")
       console.log(decompressed_string)
   }
 
+  //计算延迟
   async function getdelay(pushTime:string){
     const timestamp = new Date(pushTime).getTime();
     try {
