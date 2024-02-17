@@ -11,15 +11,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
   const decoder = new TextDecoder()
   //进行解压
   async function hpcc_handleCompress(unit8Array:Uint8Array,eventName:string) {

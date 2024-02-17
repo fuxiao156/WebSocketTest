@@ -1,5 +1,5 @@
-<!-- 计算压缩时间 -->
 <script setup lang="ts">
+//<!-- 计算压缩时间 -->
   import {io} from "socket.io-client";
   import {ref,onMounted} from "vue";
   import {Zstd} from "@hpcc-js/wasm/zstd"
@@ -8,6 +8,8 @@
   const decoder = new TextDecoder()
 //   var isCompress = [false,false,false,false]
   var isCompress = [true,true,true,true]
+  //用来计数
+  const countNum = ref(0)
   socket.on('connect', () => {
     console.log('Connected to the WebSocket server');
   });
@@ -20,16 +22,16 @@
   // 服务器传来的数据
   //以下是没有压缩的数据
   socket.on('data_1000000', (data) => {
-    getJsHeap('data_1000000')
+    getJsHeap()
   })
   socket.on('data_2000000', (data) => {
-    getJsHeap('data_2000000')
+    getJsHeap()
   })
   socket.on('data_5000000', (data) => {
-    getJsHeap('data_5000000')
+    getJsHeap()
   })
   socket.on('data_10000000', (data) => {
-    getJsHeap('data_10000000')
+    getJsHeap()
   })
   //以下是压缩了的数据
   socket.on('data_1000000_comp', (data) => {
@@ -59,22 +61,26 @@
       //进行解压
   async function hpcc_handleCompress(unit8Array:Uint8Array,eventName:string) {
     console.log("开始解压")
-      getJsHeap(eventName)
+      const startTime = performance.now();
       const zstd = await Zstd.load();
       const decompressed_data = zstd.decompress(unit8Array)
       const decompressed_string = decoder.decode(decompressed_data)
+      const endTime = performance.now();
+      const time = (endTime - startTime).toFixed(1)
       console.log("解压完成")
-      console.log(decompressed_string)
+    //   console.log(decompressed_string)
+      getJsHeap(time)
   }
 
-  function getJsHeap(eventName:string){
+  function getJsHeap(decompressTime:string='0'){
     const totalHeapSize = (performance.memory.jsHeapSizeLimit/1024).toFixed(0);
     const usedHeapSize = (performance.memory.usedJSHeapSize/1024).toFixed(0);
     const freeHeapSize = (totalHeapSize - usedHeapSize).toFixed(0);
-    socket.emit(eventName, {
+    socket.emit('responce', {
         totalHeapSize,
         usedHeapSize,
-        freeHeapSize
+        freeHeapSize,
+        decompressTime
     });
   }
 
@@ -99,6 +105,7 @@
         lastime = nextTime;
         nextTime = performance.now();
         jsHeapSize.value = window.console?.memory?.usedJSHeapSize || 0;
+        countNum.value = countNum.value + 1
       }, 500);
     };
 
@@ -135,6 +142,7 @@
 
   <div>
     <h1>Performance Monitoring</h1>
+    <div>{{ countNum }}</div>
     <button @click="startMonitoring" v-if="!monitoring">Start Monitoring</button>
     <button @click="stopMonitoring" v-if="monitoring">Stop Monitoring</button>
     <div v-if="jsHeapSize !== null">JS Heap Size: {{ formatBytes(jsHeapSize) }}</div>
