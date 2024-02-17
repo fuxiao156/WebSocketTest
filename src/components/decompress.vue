@@ -3,8 +3,6 @@
   import {io} from "socket.io-client";
   import {ref,onMounted} from "vue";
   import {Zstd} from "@hpcc-js/wasm/zstd"
-import { get } from "http";
-import { number } from "echarts/core";
   
   const socket = io("http://175.6.203.76:24630");
   const decoder = new TextDecoder()
