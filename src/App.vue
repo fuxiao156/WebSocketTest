@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import transPort from './components/transPort.vue'
 import test from './components/test.vue'
+import decompress from './components/decompress.vue';
 </script>
 
 <template>
-  <header>
-      <HelloWorld />
+      <!-- <transPort /> -->
       <!-- <test></test> -->
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+      <decompress></decompress>
 </template>
 
 <style scoped>

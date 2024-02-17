@@ -1,3 +1,4 @@
+<!-- 计算传输时间 -->
 <script setup lang="ts">
   import {io} from "socket.io-client";
   import {ref,onMounted} from "vue";
@@ -265,6 +266,10 @@ onMounted(() => {
       const unit8Array = new Uint8Array(data.data);
       hpcc_handleCompress(unit8Array)
     }
+  })
+  socket.on('data_all_comp', (data) => {
+      const unit8Array = new Uint8Array(data.data);
+      hpcc_handleCompress(unit8Array)
   })
       //进行解压
   async function hpcc_handle(unit8Array:Uint8Array) {
