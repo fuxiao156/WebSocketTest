@@ -21,41 +21,15 @@
 
   // 服务器传来的数据
   //以下是没有压缩的数据
-  socket.on('data_1000000', (data) => {
-    getJsHeap(data.data.length)
-  })
-  socket.on('data_2000000', (data) => {
-    getJsHeap(data.data.length)
-  })
-  socket.on('data_5000000', (data) => {
-    getJsHeap(data.data.length)
-  })
-  socket.on('data_10000000', (data) => {
-    getJsHeap(data.data.length)
-  })
-  //以下是压缩了的数据
-  socket.on('data_1000000_comp', (data) => {
-    if(isCompress[0]){
-      const unit8Array = new Uint8Array(data.data);
-      hpcc_handleCompress(unit8Array,'data_1000000_comp')
-    }
-  })
-  socket.on('data_2000000_comp', (data) => {
-    if(isCompress[1]){
-      const unit8Array = new Uint8Array(data.data);
-      hpcc_handleCompress(unit8Array,'data_2000000_comp')
-    }
-  })
-  socket.on('data_5000000_comp', (data) => {
-    if(isCompress[2]){
-      const unit8Array = new Uint8Array(data.data);
-      hpcc_handleCompress(unit8Array,'data_5000000_comp')
-    }
-  })
-  socket.on('data_10000000_comp', (data) => {
-    if(isCompress[3]){
+  const encoder = new TextEncoder()
+  socket.on('sendData',(data)=>{
+    if(data.isComp){
       const unit8Array = new Uint8Array(data.data);
       hpcc_handleCompress(unit8Array,'data_10000000_comp')
+    }
+    else{
+      var Size = encoder.encode(data.data).length/1024
+      getJsHeap('0', Size)
     }
   })
       //进行解压
@@ -64,18 +38,20 @@
       const startTime = performance.now();
       const zstd = await Zstd.load();
       const decompressed_data = zstd.decompress(unit8Array)
-      const decompressed_string_len = decoder.decode(decompressed_data).length
+      const Size = decompressed_data.length/1024
       const endTime = performance.now();
       const time = (endTime - startTime).toFixed(1)
       console.log("解压完成")
-      getJsHeap(time,decompressed_string_len)
+      getJsHeap(time,Size)
+      const decompressed_string = decoder.decode(decompressed_data)
+      console.log(Size)
+      console.log(decompressed_string)
   }
 
-  function getJsHeap(decompressTime:string='0',stringLen:number=0){
+  function getJsHeap(decompressTime:string='0',Size:number=0){
     const totalHeapSize = (performance.memory.jsHeapSizeLimit/1024).toFixed(0);
     const usedHeapSize = (performance.memory.usedJSHeapSize/1024).toFixed(0);
     const freeHeapSize = (totalHeapSize - usedHeapSize).toFixed(0);
-    const Size = (stringLen/512).toFixed(0)
     socket.emit('responce', {
         totalHeapSize,
         usedHeapSize,
@@ -84,6 +60,7 @@
         Size
     });
   }
+
 
   //检测资源使用率
     // 使用 ref 创建响应式变量
