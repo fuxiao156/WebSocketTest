@@ -22,16 +22,16 @@
   // 服务器传来的数据
   //以下是没有压缩的数据
   socket.on('data_1000000', (data) => {
-    getJsHeap()
+    getJsHeap(data.data.length)
   })
   socket.on('data_2000000', (data) => {
-    getJsHeap()
+    getJsHeap(data.data.length)
   })
   socket.on('data_5000000', (data) => {
-    getJsHeap()
+    getJsHeap(data.data.length)
   })
   socket.on('data_10000000', (data) => {
-    getJsHeap()
+    getJsHeap(data.data.length)
   })
   //以下是压缩了的数据
   socket.on('data_1000000_comp', (data) => {
@@ -64,23 +64,24 @@
       const startTime = performance.now();
       const zstd = await Zstd.load();
       const decompressed_data = zstd.decompress(unit8Array)
-      const decompressed_string = decoder.decode(decompressed_data)
+      const decompressed_string_len = decoder.decode(decompressed_data).length
       const endTime = performance.now();
       const time = (endTime - startTime).toFixed(1)
       console.log("解压完成")
-    //   console.log(decompressed_string)
-      getJsHeap(time)
+      getJsHeap(time,decompressed_string_len)
   }
 
-  function getJsHeap(decompressTime:string='0'){
+  function getJsHeap(decompressTime:string='0',stringLen:number=0){
     const totalHeapSize = (performance.memory.jsHeapSizeLimit/1024).toFixed(0);
     const usedHeapSize = (performance.memory.usedJSHeapSize/1024).toFixed(0);
     const freeHeapSize = (totalHeapSize - usedHeapSize).toFixed(0);
+    const Size = (stringLen/512).toFixed(0)
     socket.emit('responce', {
         totalHeapSize,
         usedHeapSize,
         freeHeapSize,
-        decompressTime
+        decompressTime,
+        Size
     });
   }
 
